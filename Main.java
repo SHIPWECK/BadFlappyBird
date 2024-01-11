@@ -1,4 +1,4 @@
-package BadFlappyGame.BadFlappyBird;
+package BadFlappyBird;
 
 import java.awt.Color;
 import java.awt.Font;
