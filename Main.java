@@ -31,7 +31,7 @@ public class Main {
 class FlappyGame implements KeyListener {
     protected Random rand = new Random();
     protected int Score;
-    private final static ImageIcon flappyImg = new ImageIcon("FlappyGameBad/flappy.png");
+    private final static ImageIcon flappyImg = new ImageIcon("BadFlappyBird/flappy.png");
 
     protected JFrame gameWindow;
 
