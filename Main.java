@@ -77,7 +77,7 @@ class FlappyGame implements KeyListener {
         gameWindow.setResizable(false);
         gameWindow.setLayout(null);
         gameWindow.addKeyListener(this);
-        gameWindow.setBounds(0, 0, 500, 700);
+        gameWindow.setBounds(1200, 200, 500, 700);
         gameWindow.setIconImage(flappyImg.getImage());
         gameWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         gameWindow.getContentPane().setBackground(new Color(135, 206, 235));
