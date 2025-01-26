@@ -5,8 +5,11 @@ import java.awt.Font;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.Random;
+import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -30,7 +33,7 @@ public class Main {
 
 class FlappyGame implements KeyListener {
     protected Random rand = new Random();
-    protected int Score;
+    protected int playerScore;
     private final static ImageIcon flappyImg = new ImageIcon("BadFlappyBird/flappy.png");
 
     protected JFrame gameWindow;
@@ -141,12 +144,11 @@ class FlappyGame implements KeyListener {
         }
     }
 
-    TimerTask updatePos;
     Timer timer;
 
     protected void updatePos(JPanel[] pipes) {
         timer = new Timer();
-        updatePos = new TimerTask() {
+        TimerTask updatePos = new TimerTask() {
             @Override
             public void run() {
                 for (int i = 0; i < allPipes.length; i++)
@@ -158,7 +160,7 @@ class FlappyGame implements KeyListener {
                             // the window
                             // this allows us to reuse the pipes without deleting and remaking them
                             allPipes[i].setLocation(gameWindow.getWidth() + PIPE_WIDTH * 5, rand.nextInt(-300, -150));
-                            Score++;
+                            playerScore++;
                         }
                     else
                         allPipes[i].setLocation(allPipes[i - 1].getX(),
@@ -173,7 +175,6 @@ class FlappyGame implements KeyListener {
     protected int parbolaPositionX, parabolaPositionY;
 
     protected void updatePos(JPanel flappy) {
-        var timer = new Timer();
         var updatePos = new TimerTask() {
             @Override
             public void run() {
@@ -189,40 +190,30 @@ class FlappyGame implements KeyListener {
 
     // Checks if the x position is more than 100 pixels offscreen
     protected boolean inBounds(JPanel object) {
-        if (object.getX() < -PIPE_WIDTH ||
-                object.getY() > gameWindow.getHeight())
-            return false;
-        else
-            return true;
+        return object.getX() > -PIPE_WIDTH &&
+               object.getY() < gameWindow.getHeight();
     }
 
-    Timer collisionCheckTimer;
-    TimerTask collisionCheckTask;
-
     protected void collisionCheck() {
-        collisionCheckTimer = new Timer();
-        collisionCheckTask = new TimerTask() {
+        final Predicate<JPanel> flappyInPipe = pipe -> 
+                // is flappy running into a pipe?
+                flappy.getX() + FLAPPY_WIDTH >= pipe.getX()        &&
+                // is flappy's butt touching a pipe?
+                flappy.getX() < pipe.getX() + PIPE_WIDTH           && 
+                // is flappy falling onto a pipe?
+                flappy.getY() + FLAPPY_HEIGHT * 3.5 >= pipe.getY() &&
+                // is flappy jumping into a pipe?
+                flappy.getY() + FLAPPY_HEIGHT <= pipe.getY() + PIPE_HEIGHT;
+
+        TimerTask collisionCheckTask = new TimerTask() {
             @Override
             public void run() {
                 if (flappy.getY() > gameWindow.getHeight() ||
-                        flappy.getY() < 0 - FLAPPY_HEIGHT)
+                    flappy.getY() < 0 - FLAPPY_HEIGHT      ||
+                    Arrays.stream(allPipes)
+                          .filter(pipe -> flappy.getX() + 50 > pipe.getX())
+                          .anyMatch(flappyInPipe))
                     endGame();
-
-                for (var pipe : allPipes) {
-                    // checks if the pipe is even close to flappy, continues if not
-                    if (flappy.getX() + 50 <= pipe.getX())
-                        continue;
-                    // this works for finding when its x-coor is in the pipes
-                    if (flappy.getX() + FLAPPY_WIDTH >= pipe.getX() &&
-                            flappy.getX() < pipe.getX() + PIPE_WIDTH
-                    // everything in these parenthesis figures out if flappy's y-coord is inside the
-                    // pipes
-                            && (flappy.getY() >= pipe.getY() &&
-                                    flappy.getY() <= pipe.getY() + PIPE_HEIGHT ||
-                                    flappy.getY() + FLAPPY_HEIGHT >= pipe.getY() &&
-                                            flappy.getY() + FLAPPY_HEIGHT <= pipe.getY() + PIPE_HEIGHT))
-                        endGame();
-                }
             }
         };
 
@@ -239,9 +230,7 @@ class FlappyGame implements KeyListener {
 
     protected void endGame() {
         gameWindow.remove(flappy);
-        for (var pipe : allPipes)
-            gameWindow.remove(pipe);
-
+        
         // gives a "shutting down" feel
         try {
             Thread.sleep(300);
@@ -249,6 +238,9 @@ class FlappyGame implements KeyListener {
             e.printStackTrace();
         }
 
+        Arrays.stream(allPipes)
+            .forEach(gameWindow::remove);
+        
         var endMenu = new JPanel(null);
         var endText = new JLabel();
         var yes = new JButton("Yes");
@@ -259,7 +251,7 @@ class FlappyGame implements KeyListener {
         endText.setHorizontalAlignment(JLabel.CENTER);
         endText.setVerticalAlignment(JLabel.TOP);
         endText.setForeground(Color.BLACK);
-        endText.setText("<html><div style='text-align: center;'><p>Game Over!</p><p>You score was: " + Score
+        endText.setText("<html><div style='text-align: center;'><p>Game Over!</p><p>You score was: " + playerScore
                 + "<br>Play Again?</p></div></html>");
         endText.setFont(new Font("Impact", Font.PLAIN, 30));
 
